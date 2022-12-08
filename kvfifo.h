@@ -1,20 +1,19 @@
 #ifndef KVFIFO_H
 #define KVFIFO_H
 
-#include <cstddef>
-#include <iostream>
 #include <list>
 #include <map>
 #include <memory>
 #include <stdexcept>
-#include <utility>
 
 template <typename K, typename V> class kvfifo {
 private:
-  using x = std::list<std::pair<K, V>>::iterator;
+  using list_ptr_t = typename std::list<std::pair<K, V>>::iterator;
+  using map_t = std::map<K, std::list<list_ptr_t>>;
+  using list_t = std::list<std::pair<K, V>>;
 
   class k_iterator {
-    std::map<K, std::list<x>>::const_iterator it;
+    typename map_t::const_iterator it;
 
   public:
     using iterator_category = std::bidirectional_iterator_tag;
@@ -26,8 +25,7 @@ private:
     inline k_iterator() = default;
     inline k_iterator(K it) : it(it) {}
     inline k_iterator(const k_iterator &other) : it(other.it) {}
-    inline k_iterator(std::map<K, std::list<x>>::const_iterator &&it)
-        : it(it) {}
+    inline k_iterator(typename map_t::const_iterator &&it) : it(it) {}
 
     inline k_iterator &operator++() {
       ++it;
@@ -65,12 +63,12 @@ private:
     inline pointer operator->() { return &(it->first); }
   };
 
-  std::shared_ptr<std::map<K, std::list<x>>> A;
-  std::shared_ptr<std::list<std::pair<K, V>>> B;
-  bool is_a_copy;
+  std::shared_ptr<map_t> A;
+  std::shared_ptr<list_t> B;
+  bool must_copy;
 
   inline void copy() {
-    if (is_a_copy) {
+    if (must_copy || !A.unique() || !B.unique()) {
       kvfifo new_this{};
       for (const auto &[key, val] : *B) {
         new_this.push(key, val);
@@ -82,20 +80,28 @@ private:
 
 public:
   inline kvfifo()
-      : A(std::make_shared<std::map<K, std::list<x>>>()),
-        B(std::make_shared<std::list<std::pair<K, V>>>()), is_a_copy(false) {}
+      : A(std::make_shared<map_t>()), B(std::make_shared<list_t>()),
+        must_copy(false) {}
   inline kvfifo(kvfifo const &other)
-      : A(other.A), B(other.B), is_a_copy(true) {}
-  inline kvfifo(kvfifo &&other) {
+      : A(other.A), B(other.B), must_copy(other.must_copy) {
+    if (must_copy)
+      copy();
+  }
+  inline kvfifo(kvfifo &&other) : must_copy(other.must_copy) {
     A.swap(other.A);
     B.swap(other.B);
-    is_a_copy = other.is_a_copy;
+
+    if (must_copy)
+      copy();
   };
 
   inline kvfifo &operator=(kvfifo other) {
     A.swap(other.A);
     B.swap(other.B);
-    is_a_copy = other.is_a_copy;
+    must_copy = other.must_copy;
+
+    if (must_copy)
+      copy();
 
     return *this;
   };
@@ -159,6 +165,7 @@ public:
     copy();
 
     auto &[key, val] = B->front();
+    must_copy = true;
     return {key, val};
   }
 
@@ -178,6 +185,7 @@ public:
     copy();
 
     auto &[key, val] = B->back();
+    must_copy = true;
     return {key, val};
   }
 
@@ -199,6 +207,7 @@ public:
 
     auto &it = (*A)[key].front();
     auto &val = it->second;
+    must_copy = true;
     return {key, val};
   }
 
@@ -221,6 +230,7 @@ public:
 
     auto &it = (*A)[key].back();
     auto &val = it->second;
+    must_copy = true;
     return {key, val};
   }
 
