@@ -4,6 +4,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <stdexcept>
 
 template <typename K, typename V> class kvfifo {
 private:
