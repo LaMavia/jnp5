@@ -70,9 +70,8 @@ private:
   inline void copy() {
     if (must_copy || !A.unique() || !B.unique()) {
       kvfifo new_this{};
-      for (const auto &[key, val] : *B) {
+      for (const auto &[key, val] : *B)
         new_this.push(key, val);
-      }
 
       *this = new_this;
     }
@@ -82,7 +81,7 @@ public:
   inline kvfifo()
       : A(std::make_shared<map_t>()), B(std::make_shared<list_t>()),
         must_copy(false) {}
-  inline kvfifo(kvfifo const &other)
+  inline kvfifo(const kvfifo &other)
       : A(other.A), B(other.B), must_copy(other.must_copy) {
     if (must_copy)
       copy();
@@ -106,7 +105,7 @@ public:
     return *this;
   };
 
-  inline void push(K const &key, V const &val) {
+  inline void push(const K &key, const V &val) {
     copy();
 
     B->emplace_back(key, val);
@@ -114,9 +113,8 @@ public:
   }
 
   inline void pop() {
-    if (B->empty()) {
+    if (B->empty())
       throw std::invalid_argument("");
-    }
 
     copy();
 
@@ -125,15 +123,13 @@ public:
 
     auto &bucket = (*A)[key];
     bucket.pop_front();
-    if (bucket.empty()) {
+    if (bucket.empty())
       A->erase(key);
-    }
   }
 
-  inline void pop(K const &key) {
-    if (!A->contains(key)) {
+  inline void pop(const K &key) {
+    if (!A->contains(key))
       throw std::invalid_argument("");
-    }
 
     copy();
 
@@ -142,10 +138,9 @@ public:
     bucket.pop_front();
   }
 
-  inline void move_to_back(K const &key) {
-    if (!A->contains(key)) {
+  inline void move_to_back(const K &key) {
+    if (!A->contains(key))
       throw std::invalid_argument("");
-    }
 
     copy();
 
@@ -157,10 +152,9 @@ public:
     }
   }
 
-  inline std::pair<K const &, V &> front() {
-    if (B->empty()) {
+  inline std::pair<const K &, V &> front() {
+    if (B->empty())
       throw std::invalid_argument("");
-    }
 
     copy();
 
@@ -169,18 +163,16 @@ public:
     return {key, val};
   }
 
-  inline std::pair<K const &, V const &> front() const {
-    if (B->empty()) {
+  inline std::pair<const K &, const V &> front() const {
+    if (B->empty())
       throw std::invalid_argument("");
-    }
 
     auto &[key, val] = B->front();
     return {key, val};
   }
-  inline std::pair<K const &, V &> back() {
-    if (B->empty()) {
+  inline std::pair<const K &, V &> back() {
+    if (B->empty())
       throw std::invalid_argument("");
-    }
 
     copy();
 
@@ -189,19 +181,17 @@ public:
     return {key, val};
   }
 
-  inline std::pair<K const &, V const &> back() const {
-    if (B->empty()) {
+  inline std::pair<const K &, const V &> back() const {
+    if (B->empty())
       throw std::invalid_argument("");
-    }
 
     auto &[key, val] = B->back();
     return {key, val};
   }
 
-  inline std::pair<K const &, V &> first(K const &key) {
-    if (!A->contains(key)) {
+  inline std::pair<const K &, V &> first(const K &key) {
+    if (!A->contains(key))
       throw std::invalid_argument("");
-    }
 
     copy();
 
@@ -211,20 +201,18 @@ public:
     return {key, val};
   }
 
-  inline std::pair<K const &, V const &> first(K const &key) const {
-    if (!A->contains(key)) {
+  inline std::pair<const K &, const V &> first(const K &key) const {
+    if (!A->contains(key))
       throw std::invalid_argument("");
-    }
 
     auto &it = A->find(key)->second.front();
     auto &val = it->second;
     return {key, val};
   }
 
-  inline std::pair<K const &, V &> last(K const &key) {
-    if (!A->contains(key)) {
+  inline std::pair<const K &, V &> last(const K &key) {
+    if (!A->contains(key))
       throw std::invalid_argument("");
-    }
 
     copy();
 
@@ -234,10 +222,9 @@ public:
     return {key, val};
   }
 
-  inline std::pair<K const &, V const &> last(K const &key) const {
-    if (!A->contains(key)) {
+  inline std::pair<const K &, const V &> last(const K &key) const {
+    if (!A->contains(key))
       throw std::invalid_argument("");
-    }
 
     auto &it = A->find(key)->second.back();
     auto &val = it->second;
@@ -248,7 +235,7 @@ public:
 
   inline bool empty() const noexcept { return B->empty(); }
 
-  inline size_t count(K const &key) const noexcept {
+  inline size_t count(const K &key) const noexcept {
     return A->contains(key) ? A->find(key)->second.size() : 0;
   };
 
