@@ -13,6 +13,7 @@ private:
   using list_t = std::list<std::pair<K, V>>;
 
   class k_iterator {
+  private:
     typename map_t::const_iterator it;
 
   public:
@@ -27,43 +28,45 @@ private:
     inline k_iterator(const k_iterator &other) : it(other.it) {}
     inline k_iterator(typename map_t::const_iterator &&it) : it(it) {}
 
-    inline k_iterator &operator++() {
+    inline k_iterator &operator++() noexcept {
       ++it;
       return *this;
     }
 
-    inline k_iterator operator++(int) {
+    inline k_iterator operator++(int) noexcept {
       auto prev = *this;
       ++it;
       return prev;
     }
 
-    inline k_iterator &operator--() {
+    inline k_iterator &operator--() noexcept {
       --it;
       return *this;
     }
 
-    inline k_iterator operator--(int) {
+    inline k_iterator operator--(int) noexcept {
       auto prev = *this;
       --it;
       return prev;
     }
 
-    inline bool operator==(const k_iterator &other) const {
+    inline bool operator==(const k_iterator &other) const noexcept {
       return it == other.it;
     }
 
-    inline bool operator!=(const k_iterator &other) const {
-      return it != other.it;
+    inline bool operator!=(const k_iterator &other) const noexcept {
+      return it == other.it;
     }
 
-    inline k_iterator &operator=(const k_iterator &other) = default;
+    inline k_iterator &operator=(const k_iterator &other) noexcept = default;
 
-    inline reference operator*() { return (*it).first; }
-    inline pointer operator->() { return &(it->first); }
+    inline reference operator*() const noexcept { return (*it).first; }
+    inline pointer operator->() const noexcept { return &(it->first); }
   };
 
+  // map of lists of pointers to values of the same key
   std::shared_ptr<map_t> A;
+  // list of pairs <Key, Value>
   std::shared_ptr<list_t> B;
   bool must_copy;
 
