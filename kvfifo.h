@@ -12,6 +12,23 @@ private:
   using map_t = std::map<K, std::list<list_ptr_t>>;
   using list_t = std::list<std::pair<K, V>>;
 
+  // map of lists of pointers to values of the same key
+  std::shared_ptr<map_t> A;
+  // list of pairs <Key, Value>
+  std::shared_ptr<list_t> B;
+  bool must_copy;
+
+  inline void copy() {
+    if (must_copy || !A.unique() || !B.unique()) {
+      kvfifo new_this{};
+      for (const auto &[key, val] : *B)
+        new_this.push(key, val);
+
+      *this = new_this;
+    }
+  }
+
+public:
   class k_iterator {
   private:
     typename map_t::const_iterator it;
@@ -35,7 +52,7 @@ private:
 
     inline k_iterator operator++(int) noexcept {
       auto prev = *this;
-      ++it;
+      ++*this;
       return prev;
     }
 
@@ -46,7 +63,7 @@ private:
 
     inline k_iterator operator--(int) noexcept {
       auto prev = *this;
-      --it;
+      ++*this;
       return prev;
     }
 
@@ -64,23 +81,6 @@ private:
     inline pointer operator->() const noexcept { return &(it->first); }
   };
 
-  // map of lists of pointers to values of the same key
-  std::shared_ptr<map_t> A;
-  // list of pairs <Key, Value>
-  std::shared_ptr<list_t> B;
-  bool must_copy;
-
-  inline void copy() {
-    if (must_copy || !A.unique() || !B.unique()) {
-      kvfifo new_this{};
-      for (const auto &[key, val] : *B)
-        new_this.push(key, val);
-
-      *this = new_this;
-    }
-  }
-
-public:
   inline kvfifo()
       : A(std::make_shared<map_t>()), B(std::make_shared<list_t>()),
         must_copy(false) {}
