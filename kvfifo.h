@@ -111,13 +111,25 @@ public:
   inline void push(const K &key, const V &val) {
     copy();
 
-    B->emplace_back(key, val);
-    (*A)[key].push_back(--(B->end()));
+    bool do_pop_back = false;
+
+    try {
+      B->emplace_back(key, val);
+      do_pop_back = true;
+      (*A)[key].emplace_back(std::prev(B->end()));
+    } catch (...) {
+      if (do_pop_back) {
+        B->pop_back();
+        if ((*A)[key].empty())
+          A->erase(key);
+      }
+      throw std::invalid_argument("kvfifo: failed to push");
+    }
   }
 
   inline void pop() {
     if (B->empty())
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: empty");
 
     copy();
 
@@ -132,7 +144,7 @@ public:
 
   inline void pop(const K &key) {
     if (!A->contains(key))
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: key not found");
 
     copy();
 
@@ -143,7 +155,7 @@ public:
 
   inline void move_to_back(const K &key) {
     if (!A->contains(key))
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: key not found");
 
     copy();
 
@@ -157,7 +169,7 @@ public:
 
   inline std::pair<const K &, V &> front() {
     if (B->empty())
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: empty");
 
     copy();
 
@@ -168,14 +180,14 @@ public:
 
   inline std::pair<const K &, const V &> front() const {
     if (B->empty())
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: empty");
 
     auto &[key, val] = B->front();
     return {key, val};
   }
   inline std::pair<const K &, V &> back() {
     if (B->empty())
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: empty");
 
     copy();
 
@@ -186,7 +198,7 @@ public:
 
   inline std::pair<const K &, const V &> back() const {
     if (B->empty())
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: empty");
 
     auto &[key, val] = B->back();
     return {key, val};
@@ -194,7 +206,7 @@ public:
 
   inline std::pair<const K &, V &> first(const K &key) {
     if (!A->contains(key))
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: key not found");
 
     copy();
 
@@ -206,7 +218,7 @@ public:
 
   inline std::pair<const K &, const V &> first(const K &key) const {
     if (!A->contains(key))
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: key not found");
 
     auto &it = A->find(key)->second.front();
     auto &val = it->second;
@@ -215,7 +227,7 @@ public:
 
   inline std::pair<const K &, V &> last(const K &key) {
     if (!A->contains(key))
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: key not found");
 
     copy();
 
@@ -227,7 +239,7 @@ public:
 
   inline std::pair<const K &, const V &> last(const K &key) const {
     if (!A->contains(key))
-      throw std::invalid_argument("");
+      throw std::invalid_argument("kvfifo: key not found");
 
     auto &it = A->find(key)->second.back();
     auto &val = it->second;
