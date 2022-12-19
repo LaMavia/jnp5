@@ -159,12 +159,26 @@ public:
 
     copy();
 
+    size_t moved = 0;
     auto &bucket = (*A)[key];
-    for (auto &it : bucket) {
-      B->push_back(*it);
-      B->erase(it);
-      it = --(B->end());
+    std::list<list_ptr_t> new_bucket;
+
+    try {
+      for (auto &it : bucket) {
+        B->emplace_back(*it);
+        new_bucket.emplace_back(std::prev(B->end()));
+        moved++;
+      }
+    } catch (...) {
+      for (size_t i = 0; i < moved; i++)
+        B->pop_back();
+      throw;
     }
+
+    for (auto &it : bucket)
+      B->erase(it);
+
+    bucket.swap(new_bucket);
   }
 
   inline std::pair<const K &, V &> front() {
