@@ -5,17 +5,30 @@
 #include <cassert>
 
 namespace ttt {
+  bool b = false;
 class mv {
 public:
   mv() = default;
-  mv([[maybe_unused]] mv &&_) { throw std::runtime_error{"move"}; }
-  mv([[maybe_unused]] const mv &_) { throw std::runtime_error{"copy"}; }
-
-  mv &operator=([[maybe_unused]] mv &&_) {
-    throw std::runtime_error{"move assignment"};
+  mv([[maybe_unused]] mv &&m) {
+    if (b) {
+      throw std::runtime_error{"move"};
+    }
   }
-  mv &operator=([[maybe_unused]] const mv &_) {
-    throw std::runtime_error{"copy assignment"};
+  mv([[maybe_unused]] const mv &m) {
+    if (b) {
+      throw std::runtime_error{"copy"};
+    }
+  }
+
+  mv &operator=([[maybe_unused]] mv &&m) {
+    if (b) {
+      throw std::runtime_error{"move assignment"};
+    }
+  }
+  mv &operator=([[maybe_unused]] const mv &m) {
+    if (b) {
+      throw std::runtime_error{"copy assignment"};
+    }
   }
 };
 
@@ -25,6 +38,7 @@ void tt_main() {
     q.push(i, {});
   }
 
+  b = true;
   q.move_to_back(5);
 }
 
