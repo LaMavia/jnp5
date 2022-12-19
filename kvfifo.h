@@ -123,7 +123,7 @@ public:
         if ((*A)[key].empty())
           A->erase(key);
       }
-      throw std::invalid_argument("kvfifo: failed to push");
+      throw;
     }
   }
 
