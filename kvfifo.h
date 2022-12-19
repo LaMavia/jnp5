@@ -161,8 +161,8 @@ public:
 
     auto &bucket = (*A)[key];
     for (auto &it : bucket) {
-      B->push_back(*it);
       B->erase(it);
+      B->push_back(*it);
       it = --(B->end());
     }
   }
