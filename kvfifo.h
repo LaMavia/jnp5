@@ -63,7 +63,7 @@ public:
 
     inline k_iterator operator--(int) noexcept {
       auto prev = *this;
-      ++*this;
+      --*this;
       return prev;
     }
 
@@ -72,7 +72,7 @@ public:
     }
 
     inline bool operator!=(const k_iterator &other) const noexcept {
-      return it == other.it;
+      return !this->operator==(other);
     }
 
     inline k_iterator &operator=(const k_iterator &other) noexcept = default;
@@ -172,6 +172,7 @@ public:
     } catch (...) {
       for (size_t i = 0; i < moved; i++)
         B->pop_back();
+        
       throw;
     }
 
