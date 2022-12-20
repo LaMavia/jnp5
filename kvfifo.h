@@ -31,7 +31,7 @@ private:
 public:
   class k_iterator {
   private:
-    typename map_t::const_iterator it;
+    typename map_t::iterator it;
 
   public:
     using iterator_category = std::bidirectional_iterator_tag;
@@ -43,7 +43,7 @@ public:
     inline k_iterator() = default;
     inline k_iterator(K it) : it(it) {}
     inline k_iterator(const k_iterator &other) : it(other.it) {}
-    inline k_iterator(typename map_t::const_iterator &&it) : it(it) {}
+    inline k_iterator(typename map_t::iterator &&it) : it(it) {}
 
     inline k_iterator &operator++() noexcept {
       ++it;
@@ -63,7 +63,7 @@ public:
 
     inline k_iterator operator--(int) noexcept {
       auto prev = *this;
-      ++*this;
+      --*this;
       return prev;
     }
 
@@ -72,7 +72,7 @@ public:
     }
 
     inline bool operator!=(const k_iterator &other) const noexcept {
-      return it == other.it;
+      return !this->operator==(other);
     }
 
     inline k_iterator &operator=(const k_iterator &other) noexcept = default;
@@ -160,10 +160,26 @@ public:
     copy();
 
     auto &bucket = (*A)[key];
-    for (auto &it : bucket) {
-      B->erase(it);
-      B->push_back(*it);
-      it = --(B->end());
+    size_t moved = 0;
+
+    try {
+      auto eit = --(B->end());
+      for (auto &it : bucket) {
+        B->push_back(*it);
+        moved++;
+      }
+
+      for (auto &it : bucket) {
+        B->erase(it);
+        it = eit++;
+      }
+    } catch (...) {
+      auto it = B->end();
+      for (size_t i = 0; i < moved; i++) {
+        B->erase(--it);
+      }
+
+      throw;
     }
   }
 
