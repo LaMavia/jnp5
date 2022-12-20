@@ -120,7 +120,7 @@ public:
     } catch (...) {
       if (do_pop_back) {
         B->pop_back();
-        if ((*A)[key].empty())
+        if (A->contains(key) && (*A)[key].empty())
           A->erase(key);
       }
       throw;
@@ -159,27 +159,9 @@ public:
 
     copy();
 
-    size_t moved = 0;
     auto &bucket = (*A)[key];
-    std::list<list_ptr_t> new_bucket;
-
-    try {
-      for (auto &it : bucket) {
-        B->emplace_back(*it);
-        new_bucket.emplace_back(std::prev(B->end()));
-        moved++;
-      }
-    } catch (...) {
-      for (size_t i = 0; i < moved; i++)
-        B->pop_back();
-        
-      throw;
-    }
-
-    for (auto &it : bucket)
-      B->erase(it);
-
-    bucket.swap(new_bucket);
+    for (auto it : bucket)
+      B->splice(B->end(), *B, it);
   }
 
   inline std::pair<const K &, V &> front() {
