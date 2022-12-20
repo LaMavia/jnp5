@@ -31,7 +31,7 @@ private:
 public:
   class k_iterator {
   private:
-    typename map_t::iterator it;
+    typename map_t::const_iterator it;
 
   public:
     using iterator_category = std::bidirectional_iterator_tag;
@@ -43,7 +43,7 @@ public:
     inline k_iterator() = default;
     inline k_iterator(K it) : it(it) {}
     inline k_iterator(const k_iterator &other) : it(other.it) {}
-    inline k_iterator(typename map_t::iterator &&it) : it(it) {}
+    inline k_iterator(typename map_t::const_iterator &&it) : it(it) {}
 
     inline k_iterator &operator++() noexcept {
       ++it;
