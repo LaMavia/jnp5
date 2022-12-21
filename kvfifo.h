@@ -93,7 +93,7 @@ public:
   inline kvfifo(const kvfifo &other)
       : A(other.A), B(other.B), must_copy(other.must_copy) {
     if (must_copy) {
-      RETHROW({ copy(); });
+      RETHROW(copy());
     }
   }
   inline kvfifo(kvfifo &&other) : must_copy(other.must_copy) {
