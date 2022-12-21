@@ -20,11 +20,14 @@ private:
 
   inline void copy() {
     if (must_copy || !A.unique() || !B.unique()) {
-      kvfifo new_this{};
-      for (const auto &[key, val] : *B)
-        new_this.push(key, val);
-
-      *this = new_this;
+      try {
+        kvfifo new_this{};
+        for (const auto &[key, val] : *B)
+          new_this.push(key, val);
+        *this = new_this;
+      } catch (...) {
+        throw;
+      }
     }
   }
 
@@ -86,15 +89,23 @@ public:
         must_copy(false) {}
   inline kvfifo(const kvfifo &other)
       : A(other.A), B(other.B), must_copy(other.must_copy) {
-    if (must_copy)
-      copy();
+    try {
+      if (must_copy)
+        copy();
+    } catch (...) {
+      throw;
+    }
   }
   inline kvfifo(kvfifo &&other) : must_copy(other.must_copy) {
     A.swap(other.A);
     B.swap(other.B);
 
-    if (must_copy)
-      copy();
+    try {
+      if (must_copy)
+        copy();
+    } catch (...) {
+      throw;
+    }
   };
 
   inline kvfifo &operator=(kvfifo other) {
@@ -102,14 +113,22 @@ public:
     B.swap(other.B);
     must_copy = other.must_copy;
 
-    if (must_copy)
-      copy();
+    try {
+      if (must_copy)
+        copy();
+    } catch (...) {
+      throw;
+    }
 
     return *this;
   };
 
   inline void push(const K &key, const V &val) {
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     bool do_pop_back = false;
 
@@ -131,7 +150,11 @@ public:
     if (B->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     auto key = B->front().first;
     B->pop_front();
@@ -146,7 +169,11 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     auto &bucket = (*A)[key];
     B->erase(bucket.front());
@@ -157,7 +184,11 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     auto &bucket = (*A)[key];
     for (auto it : bucket)
@@ -168,7 +199,11 @@ public:
     if (B->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     auto &[key, val] = B->front();
     must_copy = true;
@@ -186,7 +221,11 @@ public:
     if (B->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     auto &[key, val] = B->back();
     must_copy = true;
@@ -205,7 +244,11 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     auto &it = (*A)[key].front();
     auto &val = it->second;
@@ -226,7 +269,11 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    copy();
+    try {
+      copy();
+    } catch (...) {
+      throw;
+    }
 
     auto &it = (*A)[key].back();
     auto &val = it->second;
@@ -251,14 +298,18 @@ public:
     return A->contains(key) ? A->find(key)->second.size() : 0;
   };
 
-  inline void clear() noexcept {
-    copy();
-    A->clear();
-    B->clear();
+  inline void clear() {
+    try {
+      copy();
+      A->clear();
+      B->clear();
+    } catch (...) {
+      throw;
+    }
   }
 
   inline k_iterator k_begin() const noexcept { return {A->begin()}; }
   inline k_iterator k_end() const noexcept { return {A->end()}; }
 };
 
-#endif /* KVFIFO_H */
+#endif // KVFIFO_H
