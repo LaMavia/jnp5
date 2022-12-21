@@ -6,6 +6,13 @@
 #include <memory>
 #include <stdexcept>
 
+#define RETHROW(X)                                                             \
+  try {                                                                        \
+    X;                                                                         \
+  } catch (...) {                                                              \
+    throw;                                                                     \
+  }
+
 template <typename K, typename V> class kvfifo {
 private:
   using list_ptr_t = typename std::list<std::pair<K, V>>::iterator;
@@ -20,14 +27,10 @@ private:
 
   inline void copy() {
     if (must_copy || !A.unique() || !B.unique()) {
-      try {
-        kvfifo new_this{};
-        for (const auto &[key, val] : *B)
-          new_this.push(key, val);
-        *this = new_this;
-      } catch (...) {
-        throw;
-      }
+      kvfifo new_this{};
+      for (const auto &[key, val] : *B)
+        new_this.push(key, val);
+      *this = new_this;
     }
   }
 
@@ -89,22 +92,16 @@ public:
         must_copy(false) {}
   inline kvfifo(const kvfifo &other)
       : A(other.A), B(other.B), must_copy(other.must_copy) {
-    try {
-      if (must_copy)
-        copy();
-    } catch (...) {
-      throw;
+    if (must_copy) {
+      RETHROW(copy());
     }
   }
   inline kvfifo(kvfifo &&other) : must_copy(other.must_copy) {
     A.swap(other.A);
     B.swap(other.B);
 
-    try {
-      if (must_copy)
-        copy();
-    } catch (...) {
-      throw;
+    if (must_copy) {
+      RETHROW(copy());
     }
   };
 
@@ -113,22 +110,15 @@ public:
     B.swap(other.B);
     must_copy = other.must_copy;
 
-    try {
-      if (must_copy)
-        copy();
-    } catch (...) {
-      throw;
+    if (must_copy) {
+      RETHROW(copy());
     }
 
     return *this;
   };
 
   inline void push(const K &key, const V &val) {
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     bool do_pop_back = false;
 
@@ -150,11 +140,7 @@ public:
     if (B->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     auto key = B->front().first;
     B->pop_front();
@@ -169,11 +155,7 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     auto &bucket = (*A)[key];
     B->erase(bucket.front());
@@ -184,11 +166,7 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     auto &bucket = (*A)[key];
     for (auto it : bucket)
@@ -199,11 +177,7 @@ public:
     if (B->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     auto &[key, val] = B->front();
     must_copy = true;
@@ -221,11 +195,7 @@ public:
     if (B->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     auto &[key, val] = B->back();
     must_copy = true;
@@ -244,11 +214,7 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     auto &it = (*A)[key].front();
     auto &val = it->second;
@@ -269,11 +235,7 @@ public:
     if (!A->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    try {
-      copy();
-    } catch (...) {
-      throw;
-    }
+    RETHROW(copy());
 
     auto &it = (*A)[key].back();
     auto &val = it->second;
@@ -299,13 +261,11 @@ public:
   };
 
   inline void clear() {
-    try {
+    RETHROW({
       copy();
       A->clear();
       B->clear();
-    } catch (...) {
-      throw;
-    }
+    });
   }
 
   inline k_iterator k_begin() const noexcept { return {A->begin()}; }
