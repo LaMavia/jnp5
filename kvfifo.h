@@ -97,8 +97,9 @@ public:
     }
   }
   inline kvfifo(kvfifo &&other) : must_copy(other.must_copy) {
-    kv_map.swap(other.kv_map);
-    kv_list.swap(other.kv_list);
+    kv_map = other.kv_map;
+    kv_list = other.kv_list;
+    other.clear();
 
     try {
       if (must_copy)
