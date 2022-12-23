@@ -13,16 +13,16 @@ private:
   using list_t = std::list<std::pair<K, V>>;
 
   // map of lists of pointers to values of the same key
-  std::shared_ptr<map_t> A;
+  std::shared_ptr<map_t> kv_map;
   // list of pairs <Key, Value>
-  std::shared_ptr<list_t> B;
+  std::shared_ptr<list_t> kv_list;
   bool must_copy;
 
   inline void copy() {
-    if (must_copy || !A.unique() || !B.unique()) {
+    if (must_copy || !kv_map.unique() || !kv_list.unique()) {
       try {
         kvfifo new_this{};
-        for (const auto &[key, val] : *B)
+        for (const auto &[key, val] : *kv_list)
           new_this.push(key, val);
         *this = new_this;
       } catch (...) {
@@ -85,10 +85,10 @@ public:
   };
 
   inline kvfifo()
-      : A(std::make_shared<map_t>()), B(std::make_shared<list_t>()),
+      : kv_map(std::make_shared<map_t>()), kv_list(std::make_shared<list_t>()),
         must_copy(false) {}
   inline kvfifo(const kvfifo &other)
-      : A(other.A), B(other.B), must_copy(other.must_copy) {
+      : kv_map(other.kv_map), kv_list(other.kv_list), must_copy(other.must_copy) {
     try {
       if (must_copy)
         copy();
@@ -97,8 +97,8 @@ public:
     }
   }
   inline kvfifo(kvfifo &&other) : must_copy(other.must_copy) {
-    A.swap(other.A);
-    B.swap(other.B);
+    kv_map.swap(other.kv_map);
+    kv_list.swap(other.kv_list);
 
     try {
       if (must_copy)
@@ -109,8 +109,8 @@ public:
   };
 
   inline kvfifo &operator=(kvfifo other) {
-    A.swap(other.A);
-    B.swap(other.B);
+    kv_map.swap(other.kv_map);
+    kv_list.swap(other.kv_list);
     must_copy = other.must_copy;
 
     try {
@@ -133,21 +133,21 @@ public:
     bool do_pop_back = false;
 
     try {
-      B->emplace_back(key, val);
+      kv_list->emplace_back(key, val);
       do_pop_back = true;
-      (*A)[key].emplace_back(std::prev(B->end()));
+      (*kv_map)[key].emplace_back(std::prev(kv_list->end()));
     } catch (...) {
       if (do_pop_back) {
-        B->pop_back();
-        if (A->contains(key) && (*A)[key].empty())
-          A->erase(key);
+        kv_list->pop_back();
+        if (kv_map->contains(key) && (*kv_map)[key].empty())
+          kv_map->erase(key);
       }
       throw;
     }
   }
 
   inline void pop() {
-    if (B->empty())
+    if (kv_list->empty())
       throw std::invalid_argument("kvfifo: empty");
 
     try {
@@ -156,17 +156,17 @@ public:
       throw;
     }
 
-    auto key = B->front().first;
-    B->pop_front();
+    auto key = kv_list->front().first;
+    kv_list->pop_front();
 
-    auto &bucket = (*A)[key];
+    auto &bucket = (*kv_map)[key];
     bucket.pop_front();
     if (bucket.empty())
-      A->erase(key);
+      kv_map->erase(key);
   }
 
   inline void pop(const K &key) {
-    if (!A->contains(key))
+    if (!kv_map->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
     try {
@@ -175,13 +175,13 @@ public:
       throw;
     }
 
-    auto &bucket = (*A)[key];
-    B->erase(bucket.front());
+    auto &bucket = (*kv_map)[key];
+    kv_list->erase(bucket.front());
     bucket.pop_front();
   }
 
   inline void move_to_back(const K &key) {
-    if (!A->contains(key))
+    if (!kv_map->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
     try {
@@ -190,13 +190,13 @@ public:
       throw;
     }
 
-    auto &bucket = (*A)[key];
+    auto &bucket = (*kv_map)[key];
     for (auto it : bucket)
-      B->splice(B->end(), *B, it);
+      kv_list->splice(kv_list->end(), *kv_list, it);
   }
 
   inline std::pair<const K &, V &> front() {
-    if (B->empty())
+    if (kv_list->empty())
       throw std::invalid_argument("kvfifo: empty");
 
     try {
@@ -205,20 +205,20 @@ public:
       throw;
     }
 
-    auto &[key, val] = B->front();
+    auto &[key, val] = kv_list->front();
     must_copy = true;
     return {key, val};
   }
 
   inline std::pair<const K &, const V &> front() const {
-    if (B->empty())
+    if (kv_list->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    auto &[key, val] = B->front();
+    auto &[key, val] = kv_list->front();
     return {key, val};
   }
   inline std::pair<const K &, V &> back() {
-    if (B->empty())
+    if (kv_list->empty())
       throw std::invalid_argument("kvfifo: empty");
 
     try {
@@ -227,21 +227,21 @@ public:
       throw;
     }
 
-    auto &[key, val] = B->back();
+    auto &[key, val] = kv_list->back();
     must_copy = true;
     return {key, val};
   }
 
   inline std::pair<const K &, const V &> back() const {
-    if (B->empty())
+    if (kv_list->empty())
       throw std::invalid_argument("kvfifo: empty");
 
-    auto &[key, val] = B->back();
+    auto &[key, val] = kv_list->back();
     return {key, val};
   }
 
   inline std::pair<const K &, V &> first(const K &key) {
-    if (!A->contains(key))
+    if (!kv_map->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
     try {
@@ -250,23 +250,23 @@ public:
       throw;
     }
 
-    auto &it = (*A)[key].front();
+    auto &it = (*kv_map)[key].front();
     auto &val = it->second;
     must_copy = true;
     return {key, val};
   }
 
   inline std::pair<const K &, const V &> first(const K &key) const {
-    if (!A->contains(key))
+    if (!kv_map->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    auto &it = A->find(key)->second.front();
+    auto &it = kv_map->find(key)->second.front();
     auto &val = it->second;
     return {key, val};
   }
 
   inline std::pair<const K &, V &> last(const K &key) {
-    if (!A->contains(key))
+    if (!kv_map->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
     try {
@@ -275,41 +275,41 @@ public:
       throw;
     }
 
-    auto &it = (*A)[key].back();
+    auto &it = (*kv_map)[key].back();
     auto &val = it->second;
     must_copy = true;
     return {key, val};
   }
 
   inline std::pair<const K &, const V &> last(const K &key) const {
-    if (!A->contains(key))
+    if (!kv_map->contains(key))
       throw std::invalid_argument("kvfifo: key not found");
 
-    auto &it = A->find(key)->second.back();
+    auto &it = kv_map->find(key)->second.back();
     auto &val = it->second;
     return {key, val};
   }
 
-  inline size_t size() const noexcept { return B->size(); }
+  inline size_t size() const noexcept { return kv_list->size(); }
 
-  inline bool empty() const noexcept { return B->empty(); }
+  inline bool empty() const noexcept { return kv_list->empty(); }
 
   inline size_t count(const K &key) const noexcept {
-    return A->contains(key) ? A->find(key)->second.size() : 0;
+    return kv_map->contains(key) ? kv_map->find(key)->second.size() : 0;
   };
 
   inline void clear() {
     try {
       copy();
-      A->clear();
-      B->clear();
+      kv_map->clear();
+      kv_list->clear();
     } catch (...) {
       throw;
     }
   }
 
-  inline k_iterator k_begin() const noexcept { return {A->begin()}; }
-  inline k_iterator k_end() const noexcept { return {A->end()}; }
+  inline k_iterator k_begin() const noexcept { return {kv_map->begin()}; }
+  inline k_iterator k_end() const noexcept { return {kv_map->end()}; }
 };
 
 #endif // KVFIFO_H
